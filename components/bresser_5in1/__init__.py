@@ -47,6 +47,7 @@ CONFIG_SCHEMA = (
         cv.Optional("wind_direction"): sensor.sensor_schema(
             unit_of_measurement="°",
             accuracy_decimals=0,
+            device_class=DEVICE_CLASS_WIND_DIRECTION,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
         cv.Optional("rain"): sensor.sensor_schema(
@@ -58,7 +59,7 @@ CONFIG_SCHEMA = (
         cv.Optional("battery"): sensor.sensor_schema(
             unit_of_measurement="%",
             accuracy_decimals=2,
-            device_class=DEVICE_CLASS_VOLTAGE,
+            device_class=DEVICE_CLASS_BATTERY,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
     })
