@@ -4,6 +4,7 @@
 #include "esphome/core/component.h"
 #include "esphome/core/gpio.h"
 #include "esphome/components/sensor/sensor.h"
+#include "esphome/components/number/number.h"
 #include "RadioLib.h"
 
 namespace esphome {
@@ -34,24 +35,50 @@ struct WeatherData
 class Bresser5in1Component : public Component 
 {
   public:
-    static void setFlag();
-
-    void set_cs_pin(InternalGPIOPin *pin) { cs_pin_ = pin; }
-    void set_gd0_pin(InternalGPIOPin *pin) { gd0_pin_ = pin; }
-    void set_gd2_pin(InternalGPIOPin *pin) { gd2_pin_ = pin; }
-
     void setup() override;
     void loop() override;
 
-    void set_temperature_sensor(sensor::Sensor *sensor) { temperature_sensor_ = sensor; }
-    void set_humidity_sensor(sensor::Sensor *sensor) { humidity_sensor_ = sensor; }
-    void set_wind_speed_sensor(sensor::Sensor *sensor) { wind_speed_sensor_ = sensor; }
-    void set_wind_gust_sensor(sensor::Sensor *sensor) { wind_gust_sensor_ = sensor; }
-    void set_wind_direction_sensor(sensor::Sensor *sensor) { wind_direction_sensor_ = sensor; }
-    void set_rain_sensor(sensor::Sensor *sensor) { rain_sensor_ = sensor; }
-    void set_battery_sensor(sensor::Sensor *sensor) { battery_sensor_ = sensor; }
+    void set_cs_pin(InternalGPIOPin *pin) { 
+      this->cs_pin_ = pin; 
+    }
+    void set_gd0_pin(InternalGPIOPin *pin) { 
+      this->gd0_pin_ = pin; 
+    }
+    void set_gd2_pin(InternalGPIOPin *pin) { 
+      this->gd2_pin_ = pin; 
+    }
+
+    void set_temperature_sensor(sensor::Sensor *sensor) { 
+      this->temperature_sensor_ = sensor; 
+    }
+    void set_humidity_sensor(sensor::Sensor *sensor) { 
+      this->humidity_sensor_ = sensor; 
+    }
+    void set_wind_speed_sensor(sensor::Sensor *sensor) { 
+      this->wind_speed_sensor_ = sensor; 
+    }
+    void set_wind_gust_sensor(sensor::Sensor *sensor) { 
+      this->wind_gust_sensor_ = sensor; 
+    }
+    void set_wind_direction_sensor(sensor::Sensor *sensor) { 
+      this->wind_direction_sensor_ = sensor; 
+    }
+    void set_rain_sensor(sensor::Sensor *sensor) { 
+      this->rain_sensor_ = sensor; 
+    }
+    void set_battery_sensor(sensor::Sensor *sensor) { 
+      this->battery_sensor_ = sensor; 
+    }
+
+    void set_sensor_id(number::Number *sensor_id) {
+      this->sensor_id_ = sensor_id;
+    }
 
   protected:
+    static void setFlag();
+
+    number::Number *sensor_id_{nullptr};
+
     InternalGPIOPin *cs_pin_{nullptr};
     InternalGPIOPin *gd0_pin_{nullptr};
     InternalGPIOPin *gd2_pin_{nullptr};

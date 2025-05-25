@@ -79,7 +79,7 @@ DecodeStatus Bresser5in1Component::decode_bresser_5in1(uint8_t *msg, uint8_t msg
   int8_t parity = verify_parity(msg, msgSize);
 
   if (parity != -1) {
-    ESP_LOGE("bresser_5in1", "%s: Parity wrong at %u\n", __func__, parity);
+    ESP_LOGE(TAG, "%s: Parity wrong at %u\n", __func__, parity);
     return DECODE_PARITY_ERR;
   }
 
@@ -87,7 +87,7 @@ DecodeStatus Bresser5in1Component::decode_bresser_5in1(uint8_t *msg, uint8_t msg
   uint8_t bitsSet = verify_checksum(msg, msgSize);
 
   if (bitsSet != expectedBitsSet) {
-    ESP_LOGE("bresser_5in1", "%s: Checksum wrong : actual [%02X] != expected [%02X]\n", __func__, bitsSet,
+    ESP_LOGE(TAG, "%s: Checksum wrong : actual [%02X] != expected [%02X]\n", __func__, bitsSet,
              expectedBitsSet);
     return DECODE_CHECKSUM_ERR;
   }
@@ -116,25 +116,25 @@ void Bresser5in1Component::setup() {
 
   radio = new CC1101(new Module(cs, gd0, RADIOLIB_NC, gd2));
 
-  ESP_LOGI("bresser_5in1", "[CC1101] Initializing ... ");
+  ESP_LOGI(TAG, "[CC1101] Initializing ... ");
 
   int state = radio->begin(868.35, 8.22, 57.136417, 270.0, 10, 32);
   if (state != RADIOLIB_ERR_NONE) {
-    ESP_LOGE("bresser_5in1", "[CC1101] Error initialising: [%d]\n", state);
+    ESP_LOGE(TAG, "[CC1101] Error initialising: [%d]\n", state);
     while (true) {
     };
   }
 
   state = radio->setCrcFiltering(false);
   if (state != RADIOLIB_ERR_NONE) {
-    ESP_LOGE("bresser_5in1", "[CC1101] Error disabling crc filtering: [%d]\n", state);
+    ESP_LOGE(TAG, "[CC1101] Error disabling crc filtering: [%d]\n", state);
     while (true) {
     };
   }
 
   state = radio->fixedPacketLengthMode(MAX_PACKET_LENGTH);
   if (state != RADIOLIB_ERR_NONE) {
-    ESP_LOGE("bresser_5in1", "[CC1101] Error setting fixed packet length: [%d]\n", state);
+    ESP_LOGE(TAG, "[CC1101] Error setting fixed packet length: [%d]\n", state);
     while (true) {
     };
   }
@@ -147,7 +147,7 @@ void Bresser5in1Component::setup() {
   // as the 1st byte of the payload.
   state = radio->setSyncWord(0xAA, 0x2D, 0, false);
   if (state != RADIOLIB_ERR_NONE) {
-    ESP_LOGE("bresser_5in1", "[CC1101] Error setting sync words: [%d]\n", state);
+    ESP_LOGE(TAG, "[CC1101] Error setting sync words: [%d]\n", state);
     while (true) {
     };
   }
@@ -156,16 +156,16 @@ void Bresser5in1Component::setup() {
 
   state = radio->startReceive();
   if (state != RADIOLIB_ERR_NONE) {
-    ESP_LOGE("bresser_5in1", "[CC1101] Error start receive: [%d]\n", state);
+    ESP_LOGE(TAG, "[CC1101] Error start receive: [%d]\n", state);
     while (true) {
     };
   }
 
-  ESP_LOGI("bresser_5in1", "[CC1101] Setup complete - awaiting incoming messages...");
+  ESP_LOGI(TAG, "[CC1101] Setup complete - awaiting incoming messages...");
 }
 
 void Bresser5in1Component::loop() {
-  if (receivedFlag) {
+  if (receivedFlag & sensor_id_ != nullptr) {
     uint8_t recvData[MAX_PACKET_LENGTH];
 
     int state = radio->readData(recvData, MAX_PACKET_LENGTH);
@@ -185,34 +185,51 @@ void Bresser5in1Component::loop() {
         // Decode the information - skip the last sync byte we use to check the data is OK
         WeatherData weatherData = {0};
         if (decode_bresser_5in1(&recvData[1], sizeof(recvData) - 1, &weatherData) == DECODE_OK) {
-          ESP_LOGI("bresser_5in1",
-                   "Type: [Bresser-5in1] Id: [%d] Battery: [%s]\nTemp: [%.1f °C] Hum: [%d %%]\nWind Gust: [%.1f km/h] "
-                   "Speed: [%.1f km/h] Direction: [%.1f °]\nRain [%.1f mm]\n",
+          ESP_LOGI(TAG,
+                   "Type: [Bresser-5in1]\n"
+                   "Id: [%d]\n"
+                   "Battery: [%s]\n"
+                   "Temp: [%.1f °C]\n"
+                   "Hum: [%d %%]\n"
+                   "Wind Gust: [%.1f km/h]\n"
+                   "Speed: [%.1f km/h]\n"
+                   "Direction: [%.1f °]\n"
+                   "Rain [%.1f mm]\n",
                    weatherData.sensor_id, weatherData.battery_ok ? "OK" : "Low", weatherData.temp_celsius,
                    weatherData.humidity, weatherData.wind_gust_meter_sec * METERS_SEC_TO_KMPH,
                    weatherData.wind_avg_meter_sec * METERS_SEC_TO_KMPH, weatherData.wind_direction_degre,
                    weatherData.rain_mm);
 
-          if (temperature_sensor_ != nullptr)
-            temperature_sensor_->publish_state(weatherData.temp_celsius);
+          if(weatherData.sensor_id == sensor_id_->state)
+          {
+            if (temperature_sensor_ != nullptr) {
+              temperature_sensor_->publish_state(weatherData.temp_celsius);
+            }
 
-          if (humidity_sensor_ != nullptr)
-            humidity_sensor_->publish_state(weatherData.humidity);
+            if (humidity_sensor_ != nullptr) {
+              humidity_sensor_->publish_state(weatherData.humidity);
+            }
 
-          if (wind_speed_sensor_ != nullptr)
-            wind_speed_sensor_->publish_state(weatherData.wind_avg_meter_sec);
+            if (wind_speed_sensor_ != nullptr) {
+              wind_speed_sensor_->publish_state(weatherData.wind_avg_meter_sec);
+            }
 
-          if (wind_gust_sensor_ != nullptr)
-            wind_gust_sensor_->publish_state(weatherData.wind_gust_meter_sec);
+            if (wind_gust_sensor_ != nullptr) {
+              wind_gust_sensor_->publish_state(weatherData.wind_gust_meter_sec);
+            }
 
-          if (wind_direction_sensor_ != nullptr)
-            wind_direction_sensor_->publish_state(weatherData.wind_direction_degre);
+            if (wind_direction_sensor_ != nullptr) {
+              wind_direction_sensor_->publish_state(weatherData.wind_direction_degre);
+            }
 
-          if (rain_sensor_ != nullptr)
-            rain_sensor_->publish_state(weatherData.rain_mm);
+            if (rain_sensor_ != nullptr) {
+              rain_sensor_->publish_state(weatherData.rain_mm);
+            }
 
-          if (battery_sensor_ != nullptr)
-            battery_sensor_->publish_state(weatherData.battery_ok);
+            if (battery_sensor_ != nullptr) {
+              battery_sensor_->publish_state(weatherData.battery_ok);
+            }
+          }
         }
       }
 #ifdef _DEBUG_MODE_
@@ -229,7 +246,7 @@ void Bresser5in1Component::loop() {
 #endif
     else {
       // some other error occurred
-      ESP_LOGE("bresser_5in1", "[CC1101] Receive failed - failed, code %d\n", state);
+      ESP_LOGE(TAG, "[CC1101] Receive failed - failed, code %d\n", state);
     }
 
     receivedFlag = false;

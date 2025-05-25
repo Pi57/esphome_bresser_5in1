@@ -1,6 +1,6 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
-from esphome.components import spi, sensor
+from esphome.components import spi, sensor, number
 from esphome import pins
 from esphome.const import *
 from esphome.core import CORE
@@ -37,6 +37,7 @@ CONFIG_SCHEMA = (
       cv.Required(CONF_CS_PIN): pins.gpio_output_pin_schema,
       cv.Required(CONF_GD0_PIN): pins.gpio_output_pin_schema,
       cv.Required(CONF_GD2_PIN): pins.gpio_output_pin_schema,
+      cv.Required(CONF_SENSOR_ID): cv.use_id(number.Number),
       cv.Optional(CONF_TEMPERATURE): sensor.sensor_schema(
         unit_of_measurement="°C",
         accuracy_decimals=1,
@@ -94,6 +95,9 @@ async def to_code(config):
 
   var = cg.new_Pvariable(config[CONF_ID])
   await cg.register_component(var, config)
+
+  sensor_id = await cg.get_variable(config[CONF_SENSOR_ID])
+  cg.add(var.set_sensor_id(sensor_id))
 
   cs = await cg.gpio_pin_expression(config[CONF_CS_PIN])
   cg.add(var.set_cs_pin(cs))
