@@ -217,7 +217,9 @@ void Bresser5in1Component::loop()
         WeatherData weatherData = {0};
         if (decode_bresser_5in1(&recvData[1], sizeof(recvData) - 1, &weatherData) == DECODE_OK)
         {
-          ESP_LOGI(TAG,
+          if(weatherData.sensor_id == sensor_id_->state)
+          {
+            ESP_LOGI(TAG,
                    "Type: [Bresser-5in1]\n"
                    "Id: [%d]\n"
                    "Battery: [%s]\n"
@@ -232,8 +234,6 @@ void Bresser5in1Component::loop()
                    weatherData.wind_avg_meter_sec * METERS_SEC_TO_KMPH, weatherData.wind_direction_degre,
                    weatherData.rain_mm);
 
-          if(weatherData.sensor_id == sensor_id_->state)
-          {
             if (temperature_sensor_ != nullptr)
             {
               temperature_sensor_->publish_state(weatherData.temp_celsius);
