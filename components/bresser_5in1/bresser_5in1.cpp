@@ -7,8 +7,9 @@ namespace bresser_5in1 {
 
 static const char *const TAG = "bresser_5in1";
 
-CC1101 *radio;
-volatile bool receivedFlag = false;
+protected:
+  CC1101 *radio {nullptr};
+  static volatile bool receivedFlag = false;
 
 uint8_t Bresser5in1Component::verify_checksum(uint8_t *msg, uint8_t msgSize)
 {
@@ -123,7 +124,7 @@ DecodeStatus Bresser5in1Component::decode_bresser_5in1(uint8_t *msg, uint8_t msg
   return DECODE_OK;
 }
 
-ICACHE_RAM_ATTR
+IRAM_ATTR
 void Bresser5in1Component::setFlag(void)
 {
   receivedFlag = true; 
@@ -143,24 +144,21 @@ void Bresser5in1Component::setup()
   if (state != RADIOLIB_ERR_NONE)
   {
     ESP_LOGE(TAG, "[CC1101] Error initialising: [%d]\n", state);
-    while (true) {
-    };
+    this->mark_failed();
   }
 
   state = radio->setCrcFiltering(false);
   if (state != RADIOLIB_ERR_NONE)
   {
     ESP_LOGE(TAG, "[CC1101] Error disabling crc filtering: [%d]\n", state);
-    while (true) {
-    };
+    this->mark_failed();
   }
 
   state = radio->fixedPacketLengthMode(MAX_PACKET_LENGTH);
   if (state != RADIOLIB_ERR_NONE)
   {
     ESP_LOGE(TAG, "[CC1101] Error setting fixed packet length: [%d]\n", state);
-    while (true) {
-    };
+    this->mark_failed();
   }
 
   // Preamble: AA AA AA AA AA
@@ -173,8 +171,7 @@ void Bresser5in1Component::setup()
   if (state != RADIOLIB_ERR_NONE)
   {
     ESP_LOGE(TAG, "[CC1101] Error setting sync words: [%d]\n", state);
-    while (true) {
-    };
+    this->mark_failed();
   }
 
   radio->setPacketReceivedAction(setFlag);
@@ -183,9 +180,7 @@ void Bresser5in1Component::setup()
   if (state != RADIOLIB_ERR_NONE)
   {
     ESP_LOGE(TAG, "[CC1101] Error start receive: [%d]\n", state);
-    while (true)
-    {
-    };
+    this->mark_failed();
   }
 
   ESP_LOGI(TAG, "[CC1101] Setup complete - awaiting incoming messages...");
@@ -193,7 +188,7 @@ void Bresser5in1Component::setup()
 
 void Bresser5in1Component::loop()
 {
-  if (receivedFlag & sensor_id_ != nullptr)
+  if (receivedFlag && sensor_id_ != nullptr)
   {
     uint8_t recvData[MAX_PACKET_LENGTH];
 
@@ -211,7 +206,7 @@ void Bresser5in1Component::loop()
           ESP_LOGD("bresser_5in1", " %02X", recvData[i]);
         }
 
-        ESP_LOGD("bresser_5in1", "[CC1101] R [0x%02X] RSSI: %f LQI: %d\n", recvData[0], radio.getRSSI(), radio.getLQI());
+        ESP_LOGD("bresser_5in1", "[CC1101] R [0x%02X] RSSI: %f LQI: %d\n", recvData[0], radio->getRSSI(), radio->getLQI());
 #endif
         // Decode the information - skip the last sync byte we use to check the data is OK
         WeatherData weatherData = {0};
@@ -278,7 +273,7 @@ void Bresser5in1Component::loop()
 #ifdef _DEBUG_MODE_
       else
       {
-        ESP_LOGD("bresser_5in1", "[CC1101] R [0x%02X] RSSI: %f LQI: %d\n", recvData[0], radio.getRSSI(), radio.getLQI());
+        ESP_LOGD("bresser_5in1", "[CC1101] R [0x%02X] RSSI: %f LQI: %d\n", recvData[0], radio->getRSSI(), radio->getLQI());
       }
 #endif
     }
