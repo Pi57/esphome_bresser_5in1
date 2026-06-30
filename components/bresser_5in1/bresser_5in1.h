@@ -83,19 +83,23 @@ class Bresser5in1Component : public Component
     InternalGPIOPin *gd0_pin_{nullptr};
     InternalGPIOPin *gd2_pin_{nullptr};
 
-    uint8_t verify_checksum(uint8_t *msg, uint8_t msgSize);
-    int8_t verify_parity(uint8_t *msg, uint8_t msgSize);
+    CC1101 *radio_{nullptr};
+    static volatile bool received_flag_;
+    uint8_t recv_data_[MAX_PACKET_LENGTH];
 
-    uint8_t get_sensor_id(uint8_t *msg);
-    float get_temperature(uint8_t *msg);
-    int get_humidity(uint8_t *msg);
-    float get_wind_direction(uint8_t *msg);
-    float get_wind_gust(uint8_t *msg);
-    float get_wind_average(uint8_t *msg);
-    float get_rain(uint8_t *msg);
-    bool get_battery(uint8_t *msg);
+    uint8_t verify_checksum(const uint8_t *msg, uint8_t msgSize) const;
+    int8_t verify_parity(const uint8_t *msg, uint8_t msgSize) const;
 
-    DecodeStatus decode_bresser_5in1(uint8_t *msg, uint8_t msgSize, WeatherData *pOut);
+    uint8_t get_sensor_id(const uint8_t *msg) const;
+    float get_temperature(const uint8_t *msg) const;
+    int get_humidity(const uint8_t *msg) const;
+    float get_wind_direction(const uint8_t *msg) const;
+    float get_wind_gust(const uint8_t *msg) const;
+    float get_wind_average(const uint8_t *msg) const;
+    float get_rain(const uint8_t *msg) const;
+    bool get_battery(const uint8_t *msg) const;
+
+    DecodeStatus decode_bresser_5in1(const uint8_t *msg, uint8_t msgSize, WeatherData *pOut) const;
 
     sensor::Sensor *temperature_sensor_{nullptr};
     sensor::Sensor *humidity_sensor_{nullptr};
