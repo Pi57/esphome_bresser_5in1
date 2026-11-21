@@ -157,7 +157,15 @@ void Bresser5in1Component::setup()
 
   ESP_LOGI(TAG, "[CC1101] Initializing ... ");
 
-  int state = radio_->begin(868.35, 8.22, 57.136417, 270.0, 10, 32);
+  ConfigFSK_t cfg;
+  cfg.frequency = 868350000;        // 868.35 MHz
+  cfg.bitRate = 8220;               // 8.22 kbps
+  cfg.frequencyDeviation = 57136;   // 57.136 kHz
+  cfg.receiverBandwidth = 270000;   // 270 kHz
+  cfg.power = 10;                   // dBm
+  cfg.preambleLength = 32;          // bits
+  int state = radio_->begin(cfg);
+  
   if (state != RADIOLIB_ERR_NONE)
   {
     ESP_LOGE(TAG, "[CC1101] Error initialising: [%d]", state);
@@ -195,7 +203,7 @@ void Bresser5in1Component::setup()
     return;
   }
 
-  radio_->setPacketReceivedAction(setFlag);
+  radio_->setIrqAction(setFlag);
 
   state = radio_->startReceive();
   if (state != RADIOLIB_ERR_NONE)
